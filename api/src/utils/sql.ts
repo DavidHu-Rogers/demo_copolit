@@ -2,6 +2,8 @@
  * SQL helper utilities
  */
 
+import { ValidationError } from './errors';
+
 export interface QueryBuilder {
   select: string[];
   from: string;
@@ -206,9 +208,13 @@ export function buildUpdateSQL<T extends Record<string, unknown>>(
  * Validate required fields in an object
  */
 export function validateRequiredFields<T extends Record<string, unknown>>(obj: T, requiredFields: string[]): void {
+  if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+    throw new ValidationError('Request body must be an object');
+  }
+
   for (const field of requiredFields) {
     if (obj[field] === undefined || obj[field] === null || obj[field] === '') {
-      throw new Error(`Required field '${field}' is missing or empty`);
+      throw new ValidationError(`Required field '${field}' is missing or empty`);
     }
   }
 }

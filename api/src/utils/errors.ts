@@ -40,30 +40,40 @@ export class ConflictError extends DatabaseError {
  * Handle database errors and convert SQLite-specific errors to appropriate types
  */
 export function handleDatabaseError(error: unknown, entity?: string, id?: string | number): never {
+  const sqliteCode =
+    typeof error === 'object' && error !== null && 'code' in error &&
+      typeof error.code === 'string'
+      ? error.code
+      : undefined;
+
   if(!(error instanceof DatabaseError)) {
     const message = error instanceof Error ? error.message : error;
 
-    // Default to generic database error
-    throw new DatabaseError(`Database operation failed: ${message}`, 'DATABASE_ERROR', 500);
+    if (!sqliteCode?.startsWith('SQLITE_')) {
+      throw new DatabaseError(`Database operation failed: ${message}`, 'DATABASE_ERROR', 500);
+    }
   }
+  const code = error instanceof DatabaseError ? error.code : sqliteCode;
+  const message = error instanceof Error ? error.message : String(error);
+
   // SQLite constraint violation (UNIQUE, FOREIGN KEY, etc.)
-  if (error.code === 'SQLITE_CONSTRAINT') {
-    if (error.message.includes('UNIQUE')) {
+  if (code === 'SQLITE_CONSTRAINT' || code?.startsWith('SQLITE_CONSTRAINT_')) {
+    if (message.includes('UNIQUE')) {
       throw new ConflictError('Resource already exists');
     }
-    if (error.message.includes('FOREIGN KEY')) {
+    if (message.includes('FOREIGN KEY')) {
       throw new ValidationError('Invalid reference to related entity');
     }
-    throw new ValidationError(error.message);
+    throw new ValidationError(message);
   }
 
   // SQLite busy/locked database
-  if (error.code === 'SQLITE_BUSY') {
+  if (code === 'SQLITE_BUSY' || code?.startsWith('SQLITE_BUSY_')) {
     throw new DatabaseError('Database is temporarily unavailable', 'DATABASE_BUSY', 503);
   }
 
   // Handle case where no rows were affected (for updates/deletes)
-  if (error.message && error.message.includes('No rows affected') && entity && id) {
+  if (message.includes('No rows affected') && entity && id) {
     throw new NotFoundError(entity, id);
   }
 
