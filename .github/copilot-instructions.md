@@ -32,6 +32,16 @@ When generating suggestions:
 - Keep PRs scoped: code + tests + docs (architecture or build notes) when behavior changes.
 - Update related instruction files if new folders or architectural slices are introduced.
 
+## REST API Guidelines
+
+For all REST API endpoints:
+
+* Use descriptive naming following RESTful conventions
+* Add Swagger/OpenAPI documentation
+* Implement TAO observability (logging, metrics, tracing)
+  - Assume TAO package is already installed
+  - Follow patterns in existing routes
+
 ## Do Not Repeat
 Do not inline full API route or component files in review feedback unless absolutely necessary: quote only the lines requiring change. Summarize low‑impact nits.
 
