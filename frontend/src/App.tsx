@@ -11,6 +11,7 @@ import AdminProducts from './components/admin/AdminProducts';
 import { useTheme } from './context/ThemeContext';
 import { lazy, Suspense } from 'react';
 import { CartProvider } from './context/CartContext';
+import CookieBanner from './components/CookieBanner';
 
 const Cart = lazy(() => import('./components/cart/Cart'));
 
@@ -39,6 +40,7 @@ function ThemedApp() {
           </Routes>
         </main>
         <Footer />
+        <CookieBanner />
       </div>
     </Router>
   );
