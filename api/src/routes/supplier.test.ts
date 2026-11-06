@@ -105,4 +105,31 @@ describe('Supplier API', () => {
     expect(response.status).toBe(503);
     expect(response.body.error.code).toBe('DATABASE_BUSY');
   });
+
+  it('forwards database failures from supplier mutations, lookups, and status checks', async () => {
+    const repository = await suppliersRepository.getSuppliersRepository(true);
+    const databaseError = new DatabaseError(
+      'Database is temporarily unavailable',
+      'DATABASE_BUSY',
+      503,
+    );
+    vi.spyOn(suppliersRepository, 'getSuppliersRepository').mockResolvedValue(repository);
+    vi.spyOn(repository, 'create').mockRejectedValue(databaseError);
+    vi.spyOn(repository, 'findById').mockRejectedValue(databaseError);
+    vi.spyOn(repository, 'update').mockRejectedValue(databaseError);
+    vi.spyOn(repository, 'delete').mockRejectedValue(databaseError);
+
+    const responses = await Promise.all([
+      request(app).post('/suppliers').send({ name: 'Unavailable Supplier' }),
+      request(app).get('/suppliers/1'),
+      request(app).get('/suppliers/1/status'),
+      request(app).put('/suppliers/1').send({ name: 'Updated Supplier' }),
+      request(app).delete('/suppliers/1'),
+    ]);
+
+    expect(responses.map((response) => response.status)).toEqual([503, 503, 503, 503, 503]);
+    expect(responses.map((response) => response.body.error.code)).toEqual(
+      Array(5).fill('DATABASE_BUSY'),
+    );
+  });
 });

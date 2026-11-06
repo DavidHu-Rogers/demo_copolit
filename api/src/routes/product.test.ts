@@ -87,6 +87,13 @@ describe('Product API', () => {
     expect(response.text).toBe('Product not found');
   });
 
+  it('returns an empty list when no products match a name', async () => {
+    const response = await request(app).get('/products/name/Unknown%20Product');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
+  });
+
   it('returns 404 when updating or deleting a missing product', async () => {
     const [updateResponse, deleteResponse] = await Promise.all([
       request(app).put('/products/99999').send({ name: 'Missing Product' }),
@@ -134,5 +141,32 @@ describe('Product API', () => {
 
     expect(response.status).toBe(503);
     expect(response.body.error.code).toBe('DATABASE_BUSY');
+  });
+
+  it('forwards database failures from product mutations and lookups', async () => {
+    const repository = await productsRepository.getProductsRepository(true);
+    const databaseError = new DatabaseError(
+      'Database is temporarily unavailable',
+      'DATABASE_BUSY',
+      503,
+    );
+    vi.spyOn(repository, 'create').mockRejectedValue(databaseError);
+    vi.spyOn(repository, 'findById').mockRejectedValue(databaseError);
+    vi.spyOn(repository, 'findByName').mockRejectedValue(databaseError);
+    vi.spyOn(repository, 'update').mockRejectedValue(databaseError);
+    vi.spyOn(repository, 'delete').mockRejectedValue(databaseError);
+
+    const responses = await Promise.all([
+      request(app).post('/products').send(product),
+      request(app).get('/products/1'),
+      request(app).get('/products/name/Test%20Product'),
+      request(app).put('/products/1').send({ name: 'Updated Product' }),
+      request(app).delete('/products/1'),
+    ]);
+
+    expect(responses.map((response) => response.status)).toEqual([503, 503, 503, 503, 503]);
+    expect(responses.map((response) => response.body.error.code)).toEqual(
+      Array(5).fill('DATABASE_BUSY'),
+    );
   });
 });
