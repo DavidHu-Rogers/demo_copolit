@@ -103,12 +103,14 @@ import express from 'express';
 import { Product } from '../models/product';
 import { getProductsRepository } from '../repositories/productsRepo';
 import { NotFoundError } from '../utils/errors';
+import { validateRequiredFields } from '../utils/sql';
 
 const router = express.Router();
 
 // Create a new product
 router.post('/', async (req, res, next) => {
   try {
+    validateRequiredFields(req.body, ['supplierId', 'name', 'price', 'sku', 'unit']);
     const repo = await getProductsRepository();
     const newProduct = await repo.create(req.body as Omit<Product, 'productId'>);
     res.status(201).json(newProduct);

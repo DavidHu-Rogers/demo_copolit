@@ -113,7 +113,7 @@ describe('SuppliersRepository', () => {
 
             expect(mockDb.run).toHaveBeenCalledWith(
                 'INSERT INTO suppliers (name, description, contact_person, email, phone, active, verified) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                ['New Supplier', 'New Description', 'Jane Doe', 'jane@test.com', '555-5678', true, false]
+                ['New Supplier', 'New Description', 'Jane Doe', 'jane@test.com', '555-5678', 1, 0]
             );
             expect(result.supplierId).toBe(2);
             expect(result.name).toBe('New Supplier');
@@ -122,7 +122,7 @@ describe('SuppliersRepository', () => {
 
     describe('update', () => {
         it('should update existing supplier and return updated data', async () => {
-            const updateData = { name: 'Updated Supplier' };
+            const updateData = { name: 'Updated Supplier', active: false };
 
             mockDb.run.mockResolvedValue({ changes: 1 });
             mockDb.get.mockResolvedValue({
@@ -139,8 +139,8 @@ describe('SuppliersRepository', () => {
             const result = await repository.update(1, updateData);
 
             expect(mockDb.run).toHaveBeenCalledWith(
-                'UPDATE suppliers SET name = ? WHERE supplier_id = ?',
-                ['Updated Supplier', 1]
+                'UPDATE suppliers SET name = ?, active = ? WHERE supplier_id = ?',
+                ['Updated Supplier', 0, 1]
             );
             expect(result.name).toBe('Updated Supplier');
         });

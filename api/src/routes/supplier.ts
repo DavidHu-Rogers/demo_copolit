@@ -127,13 +127,15 @@
 import express from 'express';
 import { Supplier } from '../models/supplier';
 import { getSuppliersRepository } from '../repositories/suppliersRepo';
-import { handleDatabaseError, NotFoundError } from '../utils/errors';
+import { NotFoundError } from '../utils/errors';
+import { validateRequiredFields } from '../utils/sql';
 
 const router = express.Router();
 
 // Create a new supplier
 router.post('/', async (req, res, next) => {
   try {
+    validateRequiredFields(req.body, ['name']);
     const repo = await getSuppliersRepository();
     const newSupplier = await repo.create(req.body as Omit<Supplier, 'supplierId'>);
     res.status(201).json(newSupplier);

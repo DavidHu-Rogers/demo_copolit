@@ -49,12 +49,21 @@ export class SuppliersRepository {
     };
   }
 
+  private toDatabaseValues(supplier: Partial<Supplier>): Record<string, unknown> {
+    return Object.fromEntries(
+      Object.entries(supplier).map(([key, value]) => [
+        key,
+        typeof value === 'boolean' ? Number(value) : value,
+      ]),
+    );
+  }
+
   /**
    * Create a new supplier
    */
   async create(supplier: Omit<Supplier, 'supplierId'>): Promise<Supplier> {
     try {
-      const { sql, values } = buildInsertSQL('suppliers', supplier);
+      const { sql, values } = buildInsertSQL('suppliers', this.toDatabaseValues(supplier));
       const result = await this.db.run(sql, values);
 
       const createdSupplier = await this.findById(result.lastID || 0);
@@ -73,7 +82,11 @@ export class SuppliersRepository {
    */
   async update(id: number, supplier: Partial<Omit<Supplier, 'supplierId'>>): Promise<Supplier> {
     try {
-      const { sql, values } = buildUpdateSQL('suppliers', supplier, 'supplier_id = ?');
+      const { sql, values } = buildUpdateSQL(
+        'suppliers',
+        this.toDatabaseValues(supplier),
+        'supplier_id = ?',
+      );
       const result = await this.db.run(sql, [...values, id]);
 
       if (result.changes === 0) {
