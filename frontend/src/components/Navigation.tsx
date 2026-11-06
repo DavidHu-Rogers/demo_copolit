@@ -2,11 +2,15 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useState } from 'react';
+import { useCart } from '../context/useCart';
+import { cartTotals } from '../context/cartState';
 
 export default function Navigation() {
   const { isLoggedIn, isAdmin, logout } = useAuth();
   const { darkMode, toggleTheme } = useTheme();
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const { state } = useCart();
+  const { count } = cartTotals(state);
 
   return (
     <nav
@@ -17,7 +21,7 @@ export default function Navigation() {
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex items-center">
               <img src="/copilot.png" alt="Copilot icon" className="h-8 w-auto" />
-              <div className="ml-2">
+              <div className="ml-2 hidden sm:block">
                 <span className={`text-xl font-bold ${darkMode ? 'text-light' : 'text-gray-800'}`}>
                   OctoCAT Supply
                 </span>
@@ -84,7 +88,15 @@ export default function Navigation() {
               )}
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <Link to="/cart" aria-label={`Shopping cart, ${count} items`}
+              className={`relative inline-flex items-center gap-1 rounded-md p-2 text-sm font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${darkMode ? 'text-light' : 'text-gray-700'}`}>
+              <svg aria-hidden="true" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path d="M3 3h2l3 12h10l3-9H6M9 20h.01M18 20h.01" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span aria-hidden="true" className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-black">{count}</span>
+              <span className="sr-only" role="status">{count} items in cart</span>
+            </Link>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full focus:outline-none transition-colors"
@@ -117,7 +129,7 @@ export default function Navigation() {
             {isLoggedIn ? (
               <>
                 <span
-                  className={`${darkMode ? 'text-light' : 'text-gray-700'} text-sm transition-colors`}
+                  className={`${darkMode ? 'text-light' : 'text-gray-700'} hidden sm:inline text-sm transition-colors`}
                 >
                   {isAdmin && <span className="text-primary">(Admin) </span>}
                   Welcome!

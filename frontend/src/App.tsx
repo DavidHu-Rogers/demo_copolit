@@ -9,6 +9,10 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import AdminProducts from './components/admin/AdminProducts';
 import { useTheme } from './context/ThemeContext';
+import { lazy, Suspense } from 'react';
+import { CartProvider } from './context/CartContext';
+
+const Cart = lazy(() => import('./components/cart/Cart'));
 
 // Wrapper component to apply theme classes
 function ThemedApp() {
@@ -25,6 +29,11 @@ function ThemedApp() {
             <Route path="/" element={<Welcome />} />
             <Route path="/about" element={<About />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/cart" element={
+              <Suspense fallback={<p role="status" className="pt-24 px-4 dark:text-light">Loading cart...</p>}>
+                <Cart />
+              </Suspense>
+            } />
             <Route path="/login" element={<Login />} />
             <Route path="/admin/products" element={<AdminProducts />} />
           </Routes>
@@ -39,7 +48,9 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-        <ThemedApp />
+        <CartProvider>
+          <ThemedApp />
+        </CartProvider>
       </ThemeProvider>
     </AuthProvider>
   );
